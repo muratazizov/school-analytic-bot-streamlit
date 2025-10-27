@@ -1,6 +1,8 @@
-# 🏫 School Database Chatbot
+# 🤖 Database Chatbot (Azure OpenAI)
 
 > Powered by Azure OpenAI GPT-4o
+
+A general-purpose intelligent chatbot that works with any SQL Server database. Ask questions in natural language and get instant answers from your data.
 
 ## 📋 Table of Contents
 
@@ -24,26 +26,46 @@
 
 ## 🎯 Project Overview
 
-This is an intelligent chatbot application that allows users to query a school database using natural language. The application converts user questions into SQL queries, executes them against a SQL Server database, and returns results in a conversational format.
+This is an intelligent chatbot application that allows users to query **any SQL Server database** using natural language. The application automatically detects your database structure, converts user questions into SQL queries, executes them, and returns results in a conversational format.
+
+**Perfect for:**
+- School and educational institutions
+- Corporate databases
+- E-commerce and inventory systems
+- HR and employee management systems
+- Customer relationship management (CRM)
+- Any SQL Server database with structured data
 
 ---
 
 ## ✨ Features
 
 - ✅ **Azure OpenAI GPT-4o Integration** - Advanced natural language processing
-- ✅ **SQL Server Database** - 9 comprehensive tables with school data
+- ✅ **Dynamic Schema Detection** - Automatically retrieves and adapts to database structure
+- ✅ **Multi-Schema Support** - Detects all schemas (dbo, SalesLT, HumanResources, etc.)
+- ✅ **Dynamic Interface** - Title, descriptions, and messages adapt to actual database content
+- ✅ **Interactive Results Table** - Pandas DataFrame with sortable, searchable data display
+- ✅ **SQL Server Database** - Supports any database with multiple tables
 - ✅ **Automatic SQL Syntax Correction** - Converts LIMIT → TOP for SQL Server
 - ✅ **Streamlit Web Interface** - Beautiful browser-based chat interface
+- ✅ **Real-time Configuration** - Change database and AI settings without restarting
 - ✅ **Real-time Query Execution** - Instant results from database
 - ✅ **Natural Language Responses** - AI-generated conversational summaries
+- ✅ **Schema Caching** - Optimized performance with 1-hour cache
 
 ### 🌐 Streamlit Web UI
 
 When using Streamlit, you'll get a browser-based chat interface with:
-- Interactive text input for natural language questions
-- Generated SQL query display
-- Results displayed in formatted tables
-- Natural language summaries of results
+- **Chat-style interaction** - Press Enter to submit questions (no button needed)
+- **Dynamic title** - Automatically shows your database name
+- **Dynamic descriptions** - Lists actual tables from your database (across all schemas)
+- **Interactive data tables** - Sortable, searchable results with pandas DataFrames
+- **Message history** - Persistent conversation throughout session
+- **Generated SQL query display** - See the SQL that was executed
+- **Natural language summaries** - AI explains results in plain English
+- **Live configuration** - Change Azure OpenAI and database settings on the fly
+- **Schema viewer** - Inspect your complete database structure (all schemas) in the sidebar
+- **Full-width display** - Tables use container width for optimal viewing
 
 #### 💡 Streamlit Tips
 
@@ -65,8 +87,9 @@ When using Streamlit, you'll get a browser-based chat interface with:
 | Azure OpenAI API (GPT-4o) | Natural language processing |
 | SQL Server | Database management |
 | Python 3.8+ | Application logic |
-| Streamlit | Web interface |
-| pyodbc | Database connectivity |
+| Streamlit >=1.28.0 | Web interface with interactive components |
+| Pandas >=2.0.0 | Data manipulation and table display |
+| pyodbc >=5.0.1 | Database connectivity |
 
 ---
 
@@ -79,7 +102,8 @@ school-analytic-bot-streamlit/
 ├── config.py              # Configuration management
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Environment variables (create this)
-├── school_db.sql         # Database creation script
+├── school_db.sql         # Sample database (school example)
+├── DYNAMIC_INTERFACE.md  # Documentation for dynamic features
 └── README.md             # This file
 ```
 
@@ -117,7 +141,8 @@ This will install:
 - `openai>=1.12.0` - Azure OpenAI client
 - `pyodbc>=5.0.1` - Database connectivity
 - `python-dotenv>=1.0.0` - Environment variable management
-- `streamlit` - Web UI (optional)
+- `streamlit>=1.28.0` - Web UI framework with interactive components
+- `pandas>=2.0.0` - Data manipulation and DataFrame display
 
 ### Step 4: Configure Environment Variables
 
@@ -139,7 +164,9 @@ DB_PASSWORD=your_password
 
 > ⚠️ **IMPORTANT:** Replace the placeholder values with your actual credentials!
 
-### Step 5: Create Database
+### Step 5: Create or Connect to Database
+
+**Option A - Use the Sample School Database:**
 
 1. Open **SQL Server Management Studio (SSMS)**
 2. Connect to your SQL Server instance
@@ -147,23 +174,33 @@ DB_PASSWORD=your_password
 4. Execute the script (F5 or click Execute)
 5. Verify that the SchoolDB database is created with sample data
 
+**Option B - Connect to Your Existing Database:**
+
+1. Ensure your database is accessible and running
+2. Note the database name, server address, and credentials
+3. Configure the `.env` file with your database details (see Step 4)
+4. The app will automatically detect and adapt to your database schema
+   - **Multi-schema support**: Detects tables across all schemas (dbo, SalesLT, HumanResources, Production, etc.)
+   - **Schema-qualified names**: Tables displayed as `schema.table` for clarity
+   - Works with AdventureWorks, WideWorldImporters, and any multi-schema database
+
 ### Step 6: Run the Application
 
 In the project directory, run:
 
-#### Option A - Console Application (original behavior):
-
-```bash
-python app.py
-```
-
-#### Option B - Streamlit Web UI (recommended):
+**Streamlit Web UI (Recommended):**
 
 ```bash
 streamlit run app.py
 ```
 
-If you use Streamlit, you'll get a browser-based chat interface that automatically opens at `http://localhost:8501`.
+The browser-based chat interface will automatically open at `http://localhost:8501`.
+
+The app will automatically:
+- Detect your database schema
+- Display your database name in the title
+- List available tables in the description
+- Adapt all messages to match your data structure
 
 ---
 
@@ -171,52 +208,85 @@ If you use Streamlit, you'll get a browser-based chat interface that automatical
 
 ### Starting the Chatbot
 
-**Console Mode:**
-```bash
-python app.py
-```
-
 **Web UI Mode:**
 ```bash
 streamlit run app.py
 ```
 
-The chatbot will display connection information and wait for your input.
+The chatbot will:
+1. Connect to your database
+2. Retrieve the complete schema automatically (all user schemas)
+3. Display a dynamic interface matching your database
+4. Show query results as interactive, sortable tables
+5. Wait for your questions
+
+### Dynamic Configuration
+
+The app now supports **real-time configuration** through the sidebar:
+
+- **Azure OpenAI Settings**: Change endpoint, model, and API key
+- **Database Settings**: Switch between databases without restarting
+- **Schema Refresh**: Manually refresh if database structure changes
+- **Apply Configuration**: Save and apply changes instantly
 
 ### Asking Questions
 
-Simply type your question in natural language. Here are some examples:
+Simply type your question in natural language. The app adapts to **any database structure**. Here are examples using the sample school database:
 
-#### 👨‍🎓 Student Queries
+#### � Example Queries (School Database)
+
+**Student Queries:**
 
 - "How many students are studying at school?"
 - "Show me all students in grade 9"
 - "Who is the best student?"
 - "List top 5 students by average score"
 
-#### 👨‍🏫 Teacher Queries
+**Teacher Queries:**
 
 - "List all teachers"
 - "Show me teachers in the Mathematics department"
 - "Who teaches Biology?"
 
-#### 📊 Grades & Scores
+**Grades & Scores:**
 
 - "What is John Adams' math score?"
 - "Show me all scores for Emily Johnson"
 - "What are the average scores by subject?"
 - "The most successful student"
 
-#### 📚 Library Queries
+**Library Queries:**
 
 - "What books has John Adams checked out?"
 - "Show me all available books"
 - "Which books are currently checked out?"
 
-#### 📅 Attendance
+**Attendance:**
 
 - "Show John Adams' attendance record"
 - "How many days was Michael Brown absent?"
+
+#### 💼 Example Queries (Other Database Types)
+
+**For E-commerce Database:**
+- "Show me the top 10 selling products this month"
+- "What's the total revenue by category?"
+- "List all pending orders"
+
+**For HR Database:**
+- "How many employees are in each department?"
+- "Show me all employees hired in 2024"
+- "What's the average salary by position?"
+
+**For CRM Database:**
+- "List all customers from New York"
+- "Show me active support tickets"
+- "What's the customer retention rate?"
+
+**For AdventureWorks Database (Multi-Schema):**
+- "List me all Customers" (queries SalesLT.Customer)
+- "Show me all products" (queries SalesLT.Product)
+- "What are the top 5 orders by total?" (queries SalesLT.SalesOrderHeader)
 
 #### 💬 General Questions
 
@@ -224,14 +294,11 @@ Simply type your question in natural language. Here are some examples:
 - "Help"
 - "Hello"
 
+**Note:** The chatbot automatically adapts its responses based on your actual database tables and structure.
+
 ### Exiting the Chatbot
 
-Type any of these commands:
-- `quit`
-- `exit`
-- `bye`
-
-Or press **Ctrl+C**
+Simply close the browser tab or stop the Streamlit server with **Ctrl+C** in the terminal.
 
 ---
 
@@ -252,26 +319,35 @@ graph LR
 
 1. **User Input** - User enters a question in natural language
 2. **AI Processing** - Question is sent to Azure OpenAI GPT-4o
-3. **SQL Generation** - AI converts the question to a SQL query
+3. **SQL Generation** - AI converts the question to a SQL query (with schema-qualified table names)
 4. **Syntax Correction** - SQL syntax is automatically corrected for SQL Server
 5. **Execution** - Query is executed against the database
-6. **Results** - Results are retrieved and formatted
+6. **Results** - Results are retrieved and formatted as pandas DataFrame
 7. **Summary** - AI generates a natural language summary
-8. **Response** - Response is displayed to the user
+8. **Display** - Shows summary + interactive table + SQL query
+9. **Response** - Full response is displayed to the user
 
 ### Key Functions
 
 | Function | Purpose |
 |----------|---------|
-| `query_db(query)` | Executes SQL query and returns results |
-| `get_sql_query_from_ai()` | Converts natural language to SQL |
-| `fix_sql_syntax()` | Corrects SQL syntax for SQL Server |
+| `get_database_schema()` | Dynamically retrieves database structure from **all user schemas** |
+| `get_dynamic_app_title()` | Generates app title based on database name |
+| `get_dynamic_app_description()` | Creates description from actual table names (strips schema prefix) |
+| `get_dynamic_welcome_message()` | Generates welcome message matching database |
+| `query_db(query)` | Executes SQL query and returns results as list of dicts |
+| `get_sql_query_from_ai()` | Converts natural language to SQL with schema-qualified names |
+| `fix_sql_syntax()` | Corrects SQL syntax for SQL Server (LIMIT→TOP, etc.) |
 | `get_ai_summary()` | Generates natural language response |
-| `main()` | Main chatbot loop |
+| `main()` | Main Streamlit UI with chat loop and **DataFrame display** |
 
 ---
 
 ## 🗄️ Database Schema
+
+### Sample Database (school_db.sql)
+
+The repository includes a sample school database for testing and demonstration purposes:
 
 ### Tables Overview
 
@@ -293,7 +369,72 @@ graph LR
 - 👨‍🏫 **4 Teachers** (Math, English, Science, History)
 - 📖 **5 Subjects**
 - 🏛️ **5 Classes** (Fall 2024 semester)
+
+### Multi-Schema Database Support
+
+The application fully supports databases with multiple schemas:
+
+- **Automatic Detection**: Queries `INFORMATION_SCHEMA` to find all user schemas (excludes system schemas)
+- **Schema-Qualified Names**: Tables displayed as `schema.table` (e.g., `SalesLT.Customer`, `HumanResources.Employee`)
+- **Foreign Key Relationships**: Includes schema in relationship descriptions
+- **Compatible Databases**: Works with AdventureWorks, WideWorldImporters, custom multi-schema databases
+
+Example schemas detected:
+- `dbo.*` - Default schema tables
+- `SalesLT.*` - Sales and customer data
+- `HumanResources.*` - Employee information
+- `Production.*` - Product catalog
+- `Purchasing.*` - Vendor and purchase orders
 - 📊 Multiple scores, attendance records, and library checkouts
+
+### Using Your Own Database
+
+The application automatically adapts to **any SQL Server database**:
+
+1. Connect to your database via the `.env` file or sidebar configuration
+2. The app retrieves the schema automatically using `INFORMATION_SCHEMA`
+3. Table names and structure are detected dynamically
+4. The interface updates to show your actual database content
+5. Ask questions about your data in natural language
+
+**No code changes required!** The app is database-agnostic and works with any properly structured SQL Server database.
+
+---
+
+## 🎨 Dynamic Features
+
+### Automatic Database Adaptation
+
+The application **automatically adapts** to any SQL Server database:
+
+**Dynamic Title:**
+- Shows your actual database name
+- Format: `🏫 {Your_Database_Name} Chatbot (Azure OpenAI)`
+
+**Dynamic Description:**
+- Lists all tables from your database
+- Converts table names to friendly format
+- Example: "Ask me questions about customers, orders, products, or inventory."
+
+**Dynamic Welcome Message:**
+- Greets users with context about available data
+- Example: "Hello! I'm your database assistant. Ask me about employees, departments, projects, and timesheets."
+
+**Dynamic Schema Detection:**
+- Retrieves all tables and columns automatically
+- Detects primary keys and foreign key relationships
+- Caches schema for 1 hour (configurable)
+- Manual refresh available via sidebar button
+
+### How It Works
+
+1. **On Startup:** App connects to your database and queries `INFORMATION_SCHEMA`
+2. **Schema Parsing:** Extracts table names, column definitions, data types, and relationships
+3. **UI Generation:** Creates dynamic title, description, and welcome message
+4. **AI Context:** Provides complete schema to Azure OpenAI for accurate SQL generation
+5. **Caching:** Stores schema for 1 hour to optimize performance
+
+See `DYNAMIC_INTERFACE.md` for detailed technical documentation.
 
 ---
 
@@ -363,11 +504,13 @@ AZURE_OPENAI_DEPLOYMENT    # Model deployment name
 
 ```python
 DB_SERVER                  # SQL Server hostname/IP
-DB_NAME                    # Database name (SchoolDB)
+DB_NAME                    # Database name (e.g., SchoolDB, InventoryDB, etc.)
 DB_USERNAME                # SQL Server username
 DB_PASSWORD                # SQL Server password
 DB_DRIVER                  # ODBC driver name
 ```
+
+**Note:** You can also change these settings via the sidebar in real-time without editing files.
 
 ### AI Behavior (app.py)
 
@@ -375,8 +518,9 @@ DB_DRIVER                  # ODBC driver name
 |-----------|-------|---------|
 | `temperature` | 0 | SQL generation (deterministic) |
 | `temperature` | 0.7 | Summaries (creative) |
-| `SYSTEM_PROMPT` | - | Instructions for AI behavior |
-| `DATABASE_SCHEMA` | - | Schema information for AI |
+| `SYSTEM_PROMPT` | Dynamic | Instructions for AI behavior (adapts to your data) |
+| `DATABASE_SCHEMA` | Auto-retrieved | Schema information retrieved from database |
+| `ttl` | 3600 | Schema cache duration (1 hour) |
 
 ---
 
@@ -406,16 +550,26 @@ DB_DRIVER                  # ODBC driver name
 
 ## 🚀 Extending the Application
 
-### Optional Enhancements
+### Already Implemented
 
-#### 1. 🌐 Web Interface
-- Add Flask or FastAPI
-- Create HTML/CSS frontend
-- Deploy to cloud (Azure, AWS, etc.)
+- ✅ **Dynamic Interface** - Automatically adapts to any database
+- ✅ **Real-time Configuration** - Change settings without restart
+- ✅ **Schema Caching** - Optimized performance
+- ✅ **Chat History** - Persistent conversation in session
+- ✅ **SQL Syntax Correction** - Automatic SQL Server compatibility
 
-#### 2. 📝 Query History
-- Save conversation logs
-- Implement session management
+### Optional Future Enhancements
+
+#### 1. 🌐 Production Deployment
+- Deploy to Azure App Service, AWS, or other cloud platforms
+- Add authentication and user management
+- Implement multi-tenant support
+
+#### 2. 📝 Enhanced Features
+- Export query results to CSV/Excel
+- Save favorite queries
+- Query history across sessions
+- Scheduled reports
 - Add query analytics
 
 #### 3. 📤 Export Functionality
