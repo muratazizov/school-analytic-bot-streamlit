@@ -323,6 +323,8 @@ IMPORTANT RULES:
 6. When joining names from multiple columns, use + for concatenation (e.g., FirstName + ' ' + LastName)
 7. Use appropriate filters based on the database context (e.g., IsActive, Status, etc.)
 8. ALWAYS use schema-qualified table names (schema.table) when tables have schema prefixes
+9. PAY ATTENTION to conversation history - if the user refers to "them", "those", "it", etc., check previous context
+10. If a user asks a follow-up question, consider what was discussed before
 
 SQL SERVER SPECIFIC SYNTAX (VERY IMPORTANT):
 - Use TOP N instead of LIMIT N (e.g., SELECT TOP 1 * FROM TableName)
@@ -333,11 +335,24 @@ SQL SERVER SPECIFIC SYNTAX (VERY IMPORTANT):
 - Use ISNULL() instead of IFNULL()
 - When using GROUP BY with aggregates, include all non-aggregated columns
 
+EXAMPLES:
+User: "Show me all customers"
+Response: SELECT * FROM dbo.Customers
+
+User: "What are their names?"  (follow-up to previous query about customers)
+Response: SELECT CustomerID, FirstName + ' ' + LastName AS FullName FROM dbo.Customers
+
+User: "How many orders do we have?"
+Response: SELECT COUNT(*) AS TotalOrders FROM dbo.Orders
+
+User: "Hello"
+Response: NO_QUERY_NEEDED: Hello! I can help you query your database. Ask me questions about your data!
+
 RESPONSE FORMAT:
-- If a database query is needed: Return ONLY the SQL query
+- If a database query is needed: Return ONLY the SQL query (no explanations, no markdown)
 - If no query is needed: Start with "NO_QUERY_NEEDED:" followed by your conversational response
 
-Now process the user's input.
+Now process the user's input based on the conversation context.
 """
 
 
@@ -529,13 +544,14 @@ def extract_sql_from_response(ai_response):
     return ai_response.strip()
 
 
-def get_sql_query_from_ai(user_prompt):
+def get_sql_query_from_ai(user_prompt, conversation_history=None):
     """
     Send user prompt to Azure OpenAI and get SQL query or conversational response.
-    Includes retry logic for transient failures.
+    Includes retry logic for transient failures and conversation history for context.
     
     Args:
         user_prompt (str): User's question
+        conversation_history (list): Previous messages for context (optional)
         
     Returns:
         tuple: (query_or_response, needs_database)
@@ -549,16 +565,40 @@ def get_sql_query_from_ai(user_prompt):
     # Get fresh system prompt with current schema
     system_prompt = get_system_prompt()
     
+    # Build message history for context-aware responses
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Add conversation history (limit to last 10 messages to avoid token overflow)
+    if conversation_history:
+        # Filter out the welcome message and limit history
+        filtered_history = [msg for msg in conversation_history if msg.get("role") != "system"]
+        # Take last 10 messages (5 exchanges)
+        recent_history = filtered_history[-10:] if len(filtered_history) > 10 else filtered_history
+        
+        for msg in recent_history:
+            role = msg.get("role")
+            content = msg.get("content", "")
+            
+            # Clean up assistant messages - remove SQL code blocks to save tokens
+            # Keep only the natural language summary
+            if role == "assistant" and "**SQL Query:**" in content:
+                # Extract only the summary part (before the SQL block)
+                summary_part = content.split("**SQL Query:**")[0].strip()
+                if summary_part:
+                    messages.append({"role": "assistant", "content": summary_part})
+            elif content and role in ["user", "assistant"]:
+                messages.append({"role": role, "content": content})
+    
+    # Add current user prompt
+    messages.append({"role": "user", "content": user_prompt})
+    
     # Retry logic for transient failures
     for attempt in range(MAX_RETRIES):
         try:
             response = client.chat.completions.create(
                 model=config.AZURE_OPENAI_DEPLOYMENT,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0
+                messages=messages,
+                temperature=0.3  # Slightly higher for better understanding
             )
             
             ai_response = response.choices[0].message.content
@@ -931,7 +971,8 @@ def main():
         #    message_placeholder.markdown("Processing your request... ⏳")
 
         # Process the prompt: get SQL or conversational response
-        response, needs_database = get_sql_query_from_ai(prompt)
+        # Pass conversation history for context-aware responses
+        response, needs_database = get_sql_query_from_ai(prompt, st.session_state.messages)
 
         # Handle errors
         if isinstance(response, str) and response.startswith("Error:"):
